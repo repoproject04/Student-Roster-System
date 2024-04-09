@@ -1,0 +1,236 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+// Class representing a student
+class Student{
+private:
+    string name;
+    int id;
+    float grade;
+
+public:
+    // Constructor
+    Student(string n, int i){
+        name = n;
+        id = i;
+        grade = 0.0;
+    }
+
+    //Function to student name
+    void setName(string n){
+        name = n;
+    }
+
+    // Function to get student name
+    string getName(){
+        return name;
+    }
+
+    // Function to set the grade
+    void setGrade(float g){
+        grade = g;
+    }
+
+    float getGrade(){
+        return grade;
+    }
+
+    // Function to display student information
+    void displayInfo(){
+        cout << "\nName: " << name << "\nID: " << id << "\nGrade: " << grade;
+    }
+
+    // Function to write student information to a file
+    void writeToFile(ofstream& file){
+        file << "Student Name: " << name << "\nStudent ID: " << id << "\nGrade: " << grade << "\n";
+    }
+
+    // Function to get student ID
+    int getID(){
+        return id;
+    }
+
+};
+
+// Function prototypes
+void addStudent(Student* students[], int& count);
+void displayStudents(Student* students[], int count);
+void saveToFile(Student* students[], int count, const string& filename);
+void loadFromFile(Student* students[], int& count, const string& filename);
+void removeStudent(Student* students[], int& count, const string& filename);
+
+// Driver code
+int main(){
+    const int max_students = 100;
+    Student* students[max_students];
+    int studentCount = 0;
+    char choice;
+    const string filename = "students.txt";
+
+    // Load student data from file
+    loadFromFile(students, studentCount, filename);
+
+    // Menu loop
+    do{
+        cout << "\n1. Add Student";
+        cout << "\n2. Display Students";
+        cout << "\n3. Save Students to File";
+        cout << "\n4. Remove Student";
+        cout << "\n5. Exit";
+        cout << "\nEnter your choice:\n";
+        cin >> choice;
+
+        switch(choice){
+            case '1':
+                addStudent(students, studentCount);
+                break;
+            case '2':
+                displayStudents(students, studentCount);
+                break;
+            case '3':
+                saveToFile(students, studentCount, filename);
+                break;
+            case '4':
+                removeStudent(students, studentCount, filename);
+                break;
+            case '5':
+                cout << "Exiting program";
+                break;
+            default:
+                cout << "Invalid choice.";
+                break;
+        }
+    }
+    while(choice != '5');
+
+    // Freeing allocated memory
+    for (int i = 0; i < studentCount; ++i){
+        delete students[i];
+    }
+
+    return 0;
+}
+
+// Function to add a student
+void addStudent(Student* students[], int& count){
+    string name;
+    int id;
+    float grade;
+
+    cout << "\nEnter student name:\n";
+    cin.ignore();
+    getline(cin, name);
+    cout << "\nEnter student ID:\n";
+    cin >> id;
+    cout << "\nEnter student grade:\n";
+    cin >> grade;
+
+    students[count] = new Student(name, id);
+    students[count]->setGrade(grade);
+    count++;
+}
+
+// Function to display all students
+void displayStudents(Student* students[], int count){
+    if (count == 0){
+        cout << "No students added yet.";
+    }
+    else{
+        cout << "List of students:\n";
+        for (int i = 0; i < count; ++i){
+            students[i]->displayInfo();
+            cout << endl;
+        }
+    }
+}
+
+// Function to save student data to a file
+void saveToFile(Student* students[], int count, const string& filename){
+    ofstream file(filename);
+
+    if (!file.is_open()){
+        cout << "Error opening file." << endl;
+        return;
+    }
+
+    for (int i = 0; i < count; ++i){
+        students[i]->writeToFile(file);
+        file << endl;
+    }
+
+    file.close();
+    cout << "Student data saved to " << filename << endl;
+}
+
+// Function to load student data from a file
+void loadFromFile(Student* students[], int& count, const string& filename){
+    ifstream file(filename);
+
+    if (!file.is_open()){
+        cout << "File not found. Starting with an empty list of students.";
+        return;
+    }
+
+    string name;
+    int id;
+    float grade;
+    count = 0;
+
+    while (file >> name >> id >> grade){
+        students[count] = new Student(name, id);
+        students[count]->setGrade(grade);
+        count++;
+    }
+
+    file.close();
+    cout << "Student data loaded from " << filename;
+}
+
+// Function to remove student from a file
+void removeStudent(Student* students[], int& count, const string& filename){
+    string name;
+    cout << "Enter student name to remove:\n";
+    cin.ignore();
+    getline(cin, name);
+
+    int id;
+    cout << "\nEnter student ID to remove:\n";
+    cin >> id;
+
+    float grade;
+    cout << "\nEnter student grade to remove:\n";
+    cin >> grade;
+
+    for (int i = 0; i < count; ++i){
+        if (students[i]->getID() == id || students[i]->getName() == name || students[i]->getGrade() == grade){
+            // Delete student from memory
+            delete students[i];
+            for (int j = i; j < count - 1; ++j){
+                students[j] = students[j + 1];
+            }
+            count--;
+
+            // Remove corresponding name and grade from memory
+            for (int k = i; k < count; ++k) {
+                students[k]->setName(students[k + 1]->getName());
+                students[k]->setGrade(students[k + 1]->getGrade());
+            }
+            cout << "Student removed from memory." << endl;
+            break;
+        }
+    }
+
+    // Update student data in file
+    ofstream outFile(filename);
+    if (!outFile.is_open()){
+        cout << "Error opening file." << endl;
+        return;
+    }
+    for (int i = 0; i < count; ++i){
+        students[i]->writeToFile(outFile);
+    }
+    outFile.close();
+    cout << "Student data updated in file." << endl;
+}
